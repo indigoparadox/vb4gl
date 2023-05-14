@@ -231,7 +231,7 @@ Public Function GLShowError() As Boolean
     
     If 0 <> ErrVal Then
         MsgBox ErrMsg, vbCritical, "OpenGL Error"
-        ShowGLError = True
+        GLShowError = True
     End If
 End Function
 

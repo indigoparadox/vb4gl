@@ -11,6 +11,7 @@ Reference=*\G{00025E01-0000-0000-C000-000000000046}#3.0#0#C:\Program Files\Commo
 ProjWinSize=79,632,194,128
 ProjWinShow=2
 IconForm="frmMain"
+ExeName32="vbgl.exe"
 Name="Project1"
 HelpContextID="0"
 StartMode=0
