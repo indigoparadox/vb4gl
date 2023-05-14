@@ -1,6 +1,6 @@
 # vb4gl
 
-![Screenshot of Demo Form](v4gl.png)
+![Screenshot of Demo Form](vbgl.png)
 
 Some rough experiments with calling OpenGL from Visual Basic 4.
 
