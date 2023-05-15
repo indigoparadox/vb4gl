@@ -92,6 +92,7 @@ Public Declare Function SwapBuffers Lib "Gdi32" (ByVal hdc As Long) As Boolean
 
 Public Declare Function wglCreateContext Lib "Opengl32" (ByVal hdc As Long) As Long
 Public Declare Function wglMakeCurrent Lib "Opengl32" (ByVal hdc As Long, ByVal hrc As Long) As Boolean
+Public Declare Function wglDeleteContext Lib "Opengl32" (ByVal hrc As Long) As Boolean
 
 Public Declare Sub glClearColor Lib "Opengl32" (ByVal r As Single, ByVal g As Single, ByVal b As Single, ByVal a As Single)
 Public Declare Sub glClear Lib "Opengl32" (ByVal b As Long)

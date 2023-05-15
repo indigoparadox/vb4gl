@@ -162,6 +162,13 @@ Private Sub Form_Load()
     GLStart
 End Sub
 
+Private Sub Form_Unload(Cancel As Integer)
+    TimerGL.Enabled = False
+    wglMakeCurrent GLhDC, vbNull
+    wglDeleteContext GLhRC
+End Sub
+
+
 Private Sub HScrollY_GotFocus()
     ChkRotateY.Value = 0
 End Sub
