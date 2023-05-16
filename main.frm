@@ -2,25 +2,22 @@ VERSION 4.00
 Begin VB.Form frmMain 
    Caption         =   "Demo Form"
    ClientHeight    =   5310
-   ClientLeft      =   1740
-   ClientTop       =   2100
+   ClientLeft      =   1710
+   ClientTop       =   2115
    ClientWidth     =   5895
    Height          =   5715
    Icon            =   "main.frx":0000
-   Left            =   1680
+   Left            =   1650
    LinkTopic       =   "Form1"
    ScaleHeight     =   354
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   393
-   Top             =   1755
+   Top             =   1770
    Width           =   6015
-   Begin VB.CommandButton CmdStart 
-      Caption         =   "&Start"
-      Height          =   495
-      Left            =   4320
-      TabIndex        =   4
+   Begin VB.Timer TimerStartup 
+      Interval        =   100
+      Left            =   5280
       Top             =   4680
-      Width           =   1455
    End
    Begin VB.CheckBox ChkRotateY 
       Caption         =   "Rotate Y"
@@ -78,12 +75,37 @@ Dim GLhDC As Long
 Dim GLhRC As Long
 
 Dim GLStarted As Boolean
+
+Dim gltree As GLObj
+Private Sub GLDrawTree()
+
+    Dim i As Integer
+    Dim j As Integer
+    Dim VertexIdx As Integer
+    
+    If 0 < gltree.FacesSz Then
+    For i = 0 To gltree.FacesSz - 1
+        If 3 = gltree.Faces(i).VertexIdxSz Then
+        glBegin GL_TRIANGLES
+        For j = 0 To gltree.Faces(i).VertexIdxSz - 1
+            VertexIdx = gltree.Faces(i).VertexIdx(j)
+            If 0 < VertexIdx Then glVertex3f _
+                gltree.Vertices(VertexIdx).x, _
+                gltree.Vertices(VertexIdx).y, _
+                gltree.Vertices(VertexIdx).z
+        Next j
+        glEnd
+        End If
+    Next i
+    End If
+End Sub
+
 Private Sub GLStart()
     Dim PFormat As PIXELFORMATDESCRIPTOR
     Dim PFormatI As Long
     Dim Aspect As Single
     Dim RetVal As Long
-        
+    
     PFormat.nSize = 40
     PFormat.nVersion = 1
     PFormat.dwFlags = PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER
@@ -111,28 +133,38 @@ Private Sub GLStart()
     PFormat.dwVisibleMask = 0
     PFormat.dwDamageMask = 0
     
-    GLhDC = PictureGL.hdc
-
-    PFormatI = ChoosePixelFormat(GLhDC, PFormat)
-    If 1 <> SetPixelFormat(GLhDC, PFormatI, PFormat) Then
-        MsgBox "Error setting pixel format: " & GetLastError, vbCritical, "OpenGL Error"
-        End
-    End If
+    RetVal = 1
+    While 0 <> RetVal
+        GLhDC = GetDC(PictureGL.hwnd)
     
-    'While 0 = GLhRC
-    GLhRC = wglCreateContext(GLhDC)
-    'MsgBox "" & GLhRC
-    'Wend
-    wglMakeCurrent GLhDC, GLhRC
-    'wglMakeCurrent just seems to always return 1 even if it failed?
-    RetVal = GetLastError
-    If 0 <> RetVal Then
-        MsgBox "Error creating context: " & RetVal, vbCritical, "OpenGL Error"
-        End
-    End If
+        PFormatI = ChoosePixelFormat(GLhDC, PFormat)
+        If 1 <> SetPixelFormat(GLhDC, PFormatI, PFormat) Then
+            MsgBox "Error setting pixel format: " & GetLastError, vbCritical, "OpenGL Error"
+            End
+        End If
+        
+        frmLog.LogLine "hDC: " & GLhDC
+        GLhRC = wglCreateContext(GLhDC)
+        frmLog.LogLine "hRC: " & GLhRC
+        If 0 = GLhRC Then
+            'Problem setting up hRC, so skip rest of setup and start again.
+            frmLog.LogLine "Error creating hRC: " & GetLastError
+        Else
+            wglMakeCurrent GLhDC, GLhRC
+            'wglMakeCurrent just seems to always return 1 even if it failed?
+            RetVal = GetLastError
+            'If 0 <> RetVal Then
+            '    MsgBox "Error creating context: " & RetVal, vbCritical, "OpenGL Error"
+            '    End
+            'End If
+        End If
+    Wend
     
     glViewport 0, 0, 320, 240
 
+    GLLoadObj gltree, App.Path & "\treehigh.obj"
+    GLViewObjTree gltree
+        
     glEnable GL_NORMALIZE
     glEnable GL_CULL_FACE
     'glEnable GL_DEPTH_TEST
@@ -153,19 +185,11 @@ Private Sub GLStart()
     'ShowGLError
 End Sub
 
-
-Private Sub CmdStart_Click()
-    GLStart
-End Sub
-
-Private Sub Form_Load()
-    GLStart
-End Sub
-
 Private Sub Form_Unload(Cancel As Integer)
     TimerGL.Enabled = False
     wglMakeCurrent GLhDC, vbNull
     wglDeleteContext GLhRC
+    End
 End Sub
 
 
@@ -174,6 +198,7 @@ Private Sub HScrollY_GotFocus()
 End Sub
 
 Private Sub TimerGL_Timer()
+
     glClearColor 0#, 0#, 0#, 1#
     glClear 16384
     
@@ -182,7 +207,9 @@ Private Sub TimerGL_Timer()
     glRotatef RotateX, 1#, 0#, 0#
     glRotatef HScrollY.Value, 0#, 1#, 0#
     
-    GLCube
+    'GLCube
+    GLDrawTree
+    
     glPopMatrix
     
     glFlush
@@ -196,3 +223,7 @@ Private Sub TimerGL_Timer()
 End Sub
 
 
+Private Sub TimerStartup_Timer()
+    GLStart
+    TimerStartup.Enabled = False
+End Sub
