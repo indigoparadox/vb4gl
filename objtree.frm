@@ -1,16 +1,20 @@
 VERSION 4.00
 Begin VB.Form frmObjTree 
-   Caption         =   "Form1"
-   ClientHeight    =   5910
-   ClientLeft      =   2610
-   ClientTop       =   1830
+   BorderStyle     =   1  'Fixed Single
+   Caption         =   "Tree View"
+   ClientHeight    =   5895
+   ClientLeft      =   7770
+   ClientTop       =   2310
    ClientWidth     =   4815
-   Height          =   6315
-   Left            =   2550
+   Height          =   6300
+   Icon            =   "objtree.frx":0000
+   Left            =   7710
    LinkTopic       =   "Form1"
-   ScaleHeight     =   5910
+   MaxButton       =   0   'False
+   MinButton       =   0   'False
+   ScaleHeight     =   5895
    ScaleWidth      =   4815
-   Top             =   1485
+   Top             =   1965
    Width           =   4935
    Begin ComctlLib.ImageList ImageListObj 
       Left            =   120
@@ -23,8 +27,9 @@ Begin VB.Form frmObjTree
       ImageWidth      =   16
       ImageHeight     =   16
       MaskColor       =   12632256
-      NumImages       =   1
-      i1              =   "objtree.frx":0000
+      NumImages       =   2
+      i1              =   "objtree.frx":0442
+      i2              =   "objtree.frx":05F9
    End
    Begin ComctlLib.TreeView TreeViewObj 
       Height          =   5655

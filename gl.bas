@@ -29,6 +29,7 @@ Public Type GLFace
     VNormalIdxSz As Integer
     VTextureIdx() As Integer
     VTextureIdxSz As Integer
+    MaterialIdx As Integer
 End Type
 
 Public Type GLObj
@@ -148,10 +149,12 @@ Public Declare Sub glLoadIdentity Lib "Opengl32" ()
 Public Declare Sub glMatrixMode Lib "Opengl32" (ByVal mode As Long)
 Public Declare Sub glTranslatef Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single)
 Public Declare Sub glRotatef Lib "Opengl32" (ByVal angle As Single, ByVal x As Single, ByVal y As Single, ByVal z As Single)
+Public Declare Sub glNormal3f Lib "Opengl32" (ByVal r As Single, ByVal g As Single, ByVal b As Single)
+Public Declare Sub glNormal3i Lib "Opengl32" (ByVal r As Long, ByVal g As Long, ByVal b As Long)
 Public Declare Sub glVertex3f Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single)
 Public Declare Sub glVertex3i Lib "Opengl32" (ByVal x As Long, ByVal y As Long, ByVal z As Long)
-Public Declare Sub glColor3f Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single)
-Public Declare Sub glNormal3f Lib "Opengl32" (ByVal x As Single, ByVal y As Single, ByVal z As Single)
+Public Declare Sub glColor3f Lib "Opengl32" (ByVal r As Single, ByVal g As Single, ByVal b As Single)
+Public Declare Sub glColor3i Lib "Opengl32" (ByVal r As Long, ByVal g As Long, ByVal b As Long)
 Public Declare Sub glBegin Lib "Opengl32" (ByVal poly As Long)
 Public Declare Sub glEnd Lib "Opengl32" ()
 Public Declare Sub glPushMatrix Lib "Opengl32" ()
@@ -163,6 +166,118 @@ Public Declare Sub glDepthRange Lib "Opengl32" (ByVal near As Double, ByVal far 
 
 Public Declare Function GetLastError Lib "Kernel32" () As Long
 
+Public Function GLDirName(ByVal FilePath As String)
+    
+    Dim OutPathLen As Integer
+    Dim OutPath As String
+    
+    OutPath = FilePath
+    OutPathLen = Len(FilePath)
+    
+    While 0 < OutPathLen And "\" <> right(OutPath, 1)
+        OutPath = left(FilePath, OutPathLen)
+        OutPathLen = OutPathLen - 1
+    Wend
+    
+    GLDirName = OutPath
+
+End Function
+
+
+Public Function GLLoadMtl(ByRef ObjIn As GLObj, ByVal MtlPath As String) As Boolean
+
+    Dim MtlFileNo As Integer
+    Dim Line As String
+    Dim LineArr() As String
+    Dim LineArrSz As Integer
+    
+    MtlFileNo = FreeFile
+
+    Open MtlPath For Input As MtlFileNo
+    Do Until EOF(MtlFileNo)
+        Line Input #MtlFileNo, Line
+        
+        If "newmtl" = left(Line, 6) Then
+        
+            'Parse the line into an array.
+            LineArrSz = GLStrSplit(LineArr, Line, " ")
+            If 2 > LineArrSz Then frmLog.LogLine "Invalid array sz: " & LineArrSz
+            
+            'Prepare and assign vertices.
+            ReDim Preserve ObjIn.Materials(ObjIn.MaterialsSz) As GLMaterial
+            ObjIn.MaterialsSz = ObjIn.MaterialsSz + 1
+            
+            ObjIn.Materials(ObjIn.MaterialsSz - 1).Name = LineArr(1)
+        
+            frmLog.LogLine "Material: " & ObjIn.Materials(ObjIn.MaterialsSz - 1).Name
+        
+        ElseIf "Kd" = left(Line, 2) Then
+        
+            'Parse the line into an array.
+            LineArrSz = GLStrSplit(LineArr, Line, " ")
+            If 4 > LineArrSz Then frmLog.LogLine "Invalid array sz: " & LineArrSz
+        
+            ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(0) = Val(LineArr(1))
+            ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(1) = Val(LineArr(2))
+            ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(2) = Val(LineArr(3))
+            
+            frmLog.LogLine "Material " & ObjIn.Materials(ObjIn.MaterialsSz - 1).Name & " Diffuse: " & _
+                ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(0) & ", " & _
+                ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(1) & ", " & _
+                ObjIn.Materials(ObjIn.MaterialsSz - 1).Diffuse(2)
+
+        End If
+    
+        DoEvents
+    Loop
+    Close MtlFileNo
+
+End Function
+
+Public Sub GLParseObjFaces(ByRef ObjIn As GLObj, ByVal CurrentMtlIdx As Integer, ByVal Line As String)
+
+    Dim LineArr() As String
+    Dim LineArrSz As Integer
+    Dim FaceArr() As String
+    Dim FaceArrSz As Integer
+    Dim FaceVertexIdx As Integer
+
+    'Parse the line into an array.
+    LineArrSz = GLStrSplit(LineArr, Line, " ")
+    If 4 > LineArrSz Then frmLog.LogLine "Invalid array sz: " & LineArrSz
+    
+    ReDim Preserve ObjIn.Faces(ObjIn.FacesSz) As GLFace
+    
+    ObjIn.Faces(ObjIn.FacesSz).MaterialIdx = CurrentMtlIdx
+        
+    'TODO: Handle >3 vertex indexes.
+    For FaceVertexIdx = 1 To 3
+        FaceArrSz = GLStrSplit(FaceArr, LineArr(FaceVertexIdx), "/")
+    
+        'Parse vertex index.
+        ReDim Preserve ObjIn.Faces(ObjIn.FacesSz).VertexIdx(ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz) As Integer
+        ObjIn.Faces(ObjIn.FacesSz).VertexIdx(ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz) = _
+            Val(FaceArr(0)) - 1 'Vertex indexes are 1-indexed in obj format.
+        ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz = ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz + 1
+            
+        'Parser normal index.
+        If 3 = FaceArrSz Then
+            ReDim Preserve ObjIn.Faces(ObjIn.FacesSz).VNormalIdx(ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz) As Integer
+            ObjIn.Faces(ObjIn.FacesSz).VNormalIdx(ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz) = _
+                Val(FaceArr(2)) - 1 'Vertex indexes are 1-indexed in obj format.
+            ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz = ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz + 1
+        End If
+        
+        'TODO: Parse normal/texture indexes.
+            
+        
+    Next FaceVertexIdx
+    
+    'Increment vertex count.
+    ObjIn.FacesSz = ObjIn.FacesSz + 1
+    
+End Sub
+
 Public Sub GLViewObjTree(ByRef ObjIn As GLObj)
     Dim FacesNode As Node
     Dim FaceIdx As Integer
@@ -171,11 +286,19 @@ Public Sub GLViewObjTree(ByRef ObjIn As GLObj)
     Dim VertexNodeIter As Node
     Dim ObjVertexIdx As Integer
     Dim ParentNodeIter As Node
+    Dim MaterialsNode As Node
+    Dim MaterialNodeIter As Node
+    Dim MaterialIdx As Integer
+    Dim DiffuseNodeIter As Node
+    Dim Kidx As Integer
     
     Set FacesNode = frmObjTree.treeviewobj.Nodes.Add(, , , "Faces")
     FacesNode.Image = 1
     For FaceIdx = 0 To ObjIn.FacesSz - 1
         Set FaceNodeIter = frmObjTree.treeviewobj.Nodes.Add(1, tvwChild, , "Face " & FaceIdx)
+        
+        frmObjTree.treeviewobj.Nodes.Add FaceNodeIter, tvwChild, , _
+            "Material: " & ObjIn.Materials(ObjIn.Faces(FaceIdx).MaterialIdx).Name
         
         'Add nodes for face vertices.
         Set ParentNodeIter = frmObjTree.treeviewobj.Nodes.Add(FaceNodeIter, tvwChild, , "Vertices")
@@ -212,88 +335,103 @@ Public Sub GLViewObjTree(ByRef ObjIn As GLObj)
         Next FaceVertexIdx
     Next FaceIdx
     
+    Set MaterialsNode = frmObjTree.treeviewobj.Nodes.Add(, , , "Materials")
+    For MaterialIdx = 0 To ObjIn.MaterialsSz - 1
+        Set MaterialNodeIter = frmObjTree.treeviewobj.Nodes.Add( _
+            MaterialsNode, tvwChild, , ObjIn.Materials(MaterialIdx).Name)
+        
+        'Add nodes for diffuse lighting.
+        Set DiffuseNodeIter = frmObjTree.treeviewobj.Nodes.Add( _
+            MaterialNodeIter, tvwChild, , "Diffuse")
+        For Kidx = 0 To 2
+            frmObjTree.treeviewobj.Nodes.Add _
+                DiffuseNodeIter, tvwChild, , "" & Kidx & ": " & ObjIn.Materials(MaterialIdx).Diffuse(Kidx)
+        Next Kidx
+    
+    Next MaterialIdx
+    
     frmObjTree.Show
 End Sub
 
-Public Sub GLCube()
+Public Sub GLDrawCube()
 
-'BACK
-glBegin GL_TRIANGLES
-glNormal3f 0, 0, 1#
-glColor3f 1#, 1#, 1#
-glVertex3f 1#, -1#, 1#
-glVertex3f 1#, 1#, 1#
-glVertex3f -1#, 1#, 1#
-
-glVertex3f -1#, 1#, 1#
-glVertex3f -1#, -1#, 1#
-glVertex3f 1#, -1#, 1#
-glEnd
-
-'RIGHT
-glBegin GL_TRIANGLES
-glNormal3f 1#, 0, 0
-glColor3f 0, 1#, 1#
-glVertex3f 1#, -1#, -1#
-glVertex3f 1#, 1#, -1#
-glVertex3f 1#, 1#, 1#
-
-glVertex3f 1#, 1#, 1#
-glVertex3f 1#, -1#, 1#
-glVertex3f 1#, -1#, -1#
-glEnd
-
-'LEFT
-glBegin GL_TRIANGLES
-glNormal3f -1#, 0, 0
-glColor3f 1#, 1#, 0
-glVertex3f -1#, -1#, 1#
-glVertex3f -1#, 1#, 1#
-glVertex3f -1#, 1#, -1#
-
-glVertex3f -1#, 1#, -1#
-glVertex3f -1#, -1#, -1#
-glVertex3f -1#, -1#, 1#
-glEnd
-
-'FRONT
-glBegin GL_TRIANGLES
-glNormal3f 0, 0, -1#
-glColor3f 0, 0, 1#
-glVertex3f -1#, -1#, -1#
-glVertex3f -1#, 1#, -1#
-glVertex3f 1#, 1#, -1#
-
-glVertex3f 1#, 1#, -1#
-glVertex3f 1#, -1#, -1#
-glVertex3f -1#, -1#, -1#
-glEnd
-
-'TOP
-glBegin GL_TRIANGLES
-glNormal3f 0, 1#, 0
-glColor3f 0, 1#, 0
-glVertex3f 1#, 1#, 1#
-glVertex3f 1#, 1#, -1#
-glVertex3f -1#, 1#, -1#
-
-glVertex3f -1#, 1#, -1#
-glVertex3f -1#, 1#, 1#
-glVertex3f 1#, 1#, 1#
-glEnd
-
-'BOTTOM
-glBegin GL_TRIANGLES
-glNormal3f 0, -1#, 0
-glColor3f 1#, 0, 0
-glVertex3f 1#, -1#, -1#
-glVertex3f 1#, -1#, 1#
-glVertex3f -1#, -1#, 1#
-
-glVertex3f -1#, -1#, 1#
-glVertex3f -1#, -1#, -1#
-glVertex3f 1#, -1#, -1#
-glEnd
+    'BACK
+    glBegin GL_TRIANGLES
+    glNormal3f 0, 0, 1#
+    glColor3f 1#, 1#, 1#
+    glVertex3f 1#, -1#, 1#
+    glVertex3f 1#, 1#, 1#
+    glVertex3f -1#, 1#, 1#
+    
+    glVertex3f -1#, 1#, 1#
+    glVertex3f -1#, -1#, 1#
+    glVertex3f 1#, -1#, 1#
+    glEnd
+    
+    'RIGHT
+    glBegin GL_TRIANGLES
+    glNormal3f 1#, 0, 0
+    glColor3f 0, 1#, 1#
+    glVertex3f 1#, -1#, -1#
+    glVertex3f 1#, 1#, -1#
+    glVertex3f 1#, 1#, 1#
+    
+    glVertex3f 1#, 1#, 1#
+    glVertex3f 1#, -1#, 1#
+    glVertex3f 1#, -1#, -1#
+    glEnd
+    
+    'LEFT
+    glBegin GL_TRIANGLES
+    glNormal3f -1#, 0, 0
+    glColor3f 1#, 1#, 0
+    glVertex3f -1#, -1#, 1#
+    glVertex3f -1#, 1#, 1#
+    glVertex3f -1#, 1#, -1#
+    
+    glVertex3f -1#, 1#, -1#
+    glVertex3f -1#, -1#, -1#
+    glVertex3f -1#, -1#, 1#
+    glEnd
+    
+    'FRONT
+    glBegin GL_TRIANGLES
+    glNormal3f 0, 0, -1#
+    glColor3f 0, 0, 1#
+    glVertex3f -1#, -1#, -1#
+    glVertex3f -1#, 1#, -1#
+    glVertex3f 1#, 1#, -1#
+    
+    glVertex3f 1#, 1#, -1#
+    glVertex3f 1#, -1#, -1#
+    glVertex3f -1#, -1#, -1#
+    glEnd
+    
+    'TOP
+    glBegin GL_TRIANGLES
+    glNormal3f 0, 1#, 0
+    glColor3f 0, 1#, 0
+    glVertex3f 1#, 1#, 1#
+    glVertex3f 1#, 1#, -1#
+    glVertex3f -1#, 1#, -1#
+    
+    glVertex3f -1#, 1#, -1#
+    glVertex3f -1#, 1#, 1#
+    glVertex3f 1#, 1#, 1#
+    glEnd
+    
+    'BOTTOM
+    glBegin GL_TRIANGLES
+    glNormal3f 0, -1#, 0
+    glColor3f 1#, 0, 0
+    glVertex3f 1#, -1#, -1#
+    glVertex3f 1#, -1#, 1#
+    glVertex3f -1#, -1#, 1#
+    
+    glVertex3f -1#, -1#, 1#
+    glVertex3f -1#, -1#, -1#
+    glVertex3f 1#, -1#, -1#
+    glEnd
 
 End Sub
 
@@ -304,9 +442,8 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
     Dim Line As String
     Dim LineArr() As String
     Dim LineArrSz As Integer
-    Dim FaceArr() As String
-    Dim FaceArrSz As Integer
-    Dim FaceVertexIdx As Integer
+    Dim CurrentMtl As Integer
+    Dim MtlIter As Integer
     
     ObjFileNo = FreeFile
 
@@ -316,47 +453,23 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
         
         If "mtllib" = left(Line, 6) Then
             LineArrSz = GLStrSplit(LineArr, Line, " ")
-            'TODO Load LineArrSz(1) as mtllib.
-            'MsgBox LineArr(1)
+            'Concat the path to the obj file with the material lib name.
+            GLLoadMtl ObjIn, GLDirName(ObjPath) & LineArr(1)
+            
+        ElseIf "usemtl" = left(Line, 6) Then
+            LineArrSz = GLStrSplit(LineArr, Line, " ")
+        
+            For MtlIter = 0 To ObjIn.MaterialsSz - 1
+                If LineArr(1) = ObjIn.Materials(MtlIter).Name Then
+                    CurrentMtl = MtlIter
+                    frmLog.LogLine "Material Selected: " & _
+                        ObjIn.Materials(CurrentMtl).Name & " (" & CurrentMtl & ")"
+                End If
+            Next MtlIter
             
         ElseIf "f" = left(Line, 1) Then
-            'Parse the line into an array.
-            LineArrSz = GLStrSplit(LineArr, Line, " ")
-            If 4 > LineArrSz Then frmLog.LogLine "Invalid array sz: " & LineArrSz
-            
-            ReDim Preserve ObjIn.Faces(ObjIn.FacesSz) As GLFace
-                
-            'TODO: Handle >3 vertex indexes.
-            For FaceVertexIdx = 1 To 3
-                FaceArrSz = GLStrSplit(FaceArr, LineArr(FaceVertexIdx), "/")
-            
-                'Parse vertex index.
-                ReDim Preserve ObjIn.Faces(ObjIn.FacesSz).VertexIdx(ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz) As Integer
-                ObjIn.Faces(ObjIn.FacesSz).VertexIdx(ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz) = _
-                    Val(FaceArr(0)) - 1 'Vertex indexes are 1-indexed in obj format.
-                frmLog.LogLine "Face " & ObjIn.FacesSz & _
-                    " Vertex " & ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz & _
-                    ": " & ObjIn.Faces(ObjIn.FacesSz).VertexIdx(ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz)
-                ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz = ObjIn.Faces(ObjIn.FacesSz).VertexIdxSz + 1
-                    
-                'Parser normal index.
-                If 3 = FaceArrSz Then
-                    ReDim Preserve ObjIn.Faces(ObjIn.FacesSz).VNormalIdx(ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz) As Integer
-                    ObjIn.Faces(ObjIn.FacesSz).VNormalIdx(ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz) = _
-                        Val(FaceArr(2)) - 1 'Vertex indexes are 1-indexed in obj format.
-                    frmLog.LogLine "Face " & ObjIn.FacesSz & _
-                        " Normal " & ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz & _
-                        ": " & ObjIn.Faces(ObjIn.FacesSz).VNormalIdx(ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz)
-                    ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz = ObjIn.Faces(ObjIn.FacesSz).VNormalIdxSz + 1
-                End If
-                
-                'TODO: Parse normal/texture indexes.
-                    
-                
-            Next FaceVertexIdx
-            
-            'Increment vertex count.
-            ObjIn.FacesSz = ObjIn.FacesSz + 1
+        
+            GLParseObjFaces ObjIn, CurrentMtl, Line
         
         ElseIf "vn" = left(Line, 2) Then
             'Parse the line into an array.
@@ -464,7 +577,7 @@ Public Function GLStrSplit(ByRef StrOut() As String, ByVal StrIn As String, ByVa
             'Realloc but preserve what's parsed so far!
             ReDim Preserve StrOut(WordsOut) As String
             StrOut(WordsOut) = ""
-        Else
+        ElseIf Chr(13) <> right(left(StrIn, CharIdx), 1) And Chr(10) <> right(left(StrIn, CharIdx), 1) Then
             StrOut(WordsOut) = StrOut(WordsOut) & right(left(StrIn, CharIdx), 1)
         End If
     Next

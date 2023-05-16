@@ -2,17 +2,17 @@ VERSION 4.00
 Begin VB.Form frmMain 
    Caption         =   "Demo Form"
    ClientHeight    =   5310
-   ClientLeft      =   1710
-   ClientTop       =   2115
+   ClientLeft      =   1425
+   ClientTop       =   2565
    ClientWidth     =   5895
    Height          =   5715
    Icon            =   "main.frx":0000
-   Left            =   1650
+   Left            =   1365
    LinkTopic       =   "Form1"
    ScaleHeight     =   354
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   393
-   Top             =   1770
+   Top             =   2220
    Width           =   6015
    Begin VB.Timer TimerStartup 
       Interval        =   100
@@ -82,17 +82,31 @@ Private Sub GLDrawTree()
     Dim i As Integer
     Dim j As Integer
     Dim VertexIdx As Integer
+    Dim MaterialIdx As Integer
     
     If 0 < gltree.FacesSz Then
     For i = 0 To gltree.FacesSz - 1
         If 3 = gltree.Faces(i).VertexIdxSz Then
         glBegin GL_TRIANGLES
+        
+        MaterialIdx = gltree.Faces(i).MaterialIdx
+        glColor3f _
+            gltree.Materials(MaterialIdx).Diffuse(0), _
+            gltree.Materials(MaterialIdx).Diffuse(1), _
+            gltree.Materials(MaterialIdx).Diffuse(2)
+        
         For j = 0 To gltree.Faces(i).VertexIdxSz - 1
             VertexIdx = gltree.Faces(i).VertexIdx(j)
-            If 0 < VertexIdx Then glVertex3f _
-                gltree.Vertices(VertexIdx).x, _
-                gltree.Vertices(VertexIdx).y, _
-                gltree.Vertices(VertexIdx).z
+            If 0 < VertexIdx Then
+                glNormal3f _
+                    gltree.Vertices(VertexIdx).x, _
+                    gltree.Vertices(VertexIdx).y, _
+                    gltree.Vertices(VertexIdx).z
+                glVertex3f _
+                    gltree.Vertices(VertexIdx).x, _
+                    gltree.Vertices(VertexIdx).y, _
+                    gltree.Vertices(VertexIdx).z
+            End If
         Next j
         glEnd
         End If
