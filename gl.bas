@@ -462,7 +462,7 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
             For MtlIter = 0 To ObjIn.MaterialsSz - 1
                 If LineArr(1) = ObjIn.Materials(MtlIter).Name Then
                     CurrentMtl = MtlIter
-                    frmLog.LogLine "Material Selected: " & _
+                    'frmLog.LogLine "Material Selected: " & _
                         ObjIn.Materials(CurrentMtl).Name & " (" & CurrentMtl & ")"
                 End If
             Next MtlIter
@@ -481,7 +481,7 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
             ObjIn.VNormals(ObjIn.VNormalsSz).x = Val(LineArr(1))
             ObjIn.VNormals(ObjIn.VNormalsSz).y = Val(LineArr(2))
             ObjIn.VNormals(ObjIn.VNormalsSz).z = Val(LineArr(3))
-            frmLog.LogLine "VNormal: " & ObjIn.VNormals(ObjIn.VNormalsSz).x & _
+            'frmLog.LogLine "VNormal: " & ObjIn.VNormals(ObjIn.VNormalsSz).x & _
                 ", " & ObjIn.VNormals(ObjIn.VNormalsSz).y & _
                 ", " & ObjIn.VNormals(ObjIn.VNormalsSz).z
             
@@ -498,7 +498,7 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
             ObjIn.VTextures(ObjIn.VTexturesSz).u = Val(LineArr(1))
             ObjIn.VTextures(ObjIn.VTexturesSz).V = Val(LineArr(2))
             If 4 = LineArrSz Then ObjIn.VTextures(ObjIn.VTexturesSz).w = Val(LineArr(3))
-            frmLog.LogLine "VTexture: " & ObjIn.VTextures(ObjIn.VTexturesSz).u & _
+            'frmLog.LogLine "VTexture: " & ObjIn.VTextures(ObjIn.VTexturesSz).u & _
                 ", " & ObjIn.VTextures(ObjIn.VTexturesSz).V & _
                 ", " & ObjIn.VTextures(ObjIn.VTexturesSz).w
             
@@ -515,7 +515,7 @@ Public Function GLLoadObj(ByRef ObjIn As GLObj, ByVal ObjPath As String) As Bool
             ObjIn.Vertices(ObjIn.VerticesSz).x = Val(LineArr(1))
             ObjIn.Vertices(ObjIn.VerticesSz).y = Val(LineArr(2))
             ObjIn.Vertices(ObjIn.VerticesSz).z = Val(LineArr(3))
-            frmLog.LogLine "Vertex: " & ObjIn.Vertices(ObjIn.VerticesSz).x & ", " & ObjIn.Vertices(ObjIn.VerticesSz).y & ", " & ObjIn.Vertices(ObjIn.VerticesSz).z
+            'frmLog.LogLine "Vertex: " & ObjIn.Vertices(ObjIn.VerticesSz).x & ", " & ObjIn.Vertices(ObjIn.VerticesSz).y & ", " & ObjIn.Vertices(ObjIn.VerticesSz).z
             
             'Increment vertex count.
             ObjIn.VerticesSz = ObjIn.VerticesSz + 1

@@ -22,7 +22,7 @@ Begin VB.Form frmMain
    Begin VB.CheckBox ChkRotateY 
       Caption         =   "Rotate Y"
       Height          =   375
-      Left            =   360
+      Left            =   480
       TabIndex        =   3
       Top             =   4800
       Value           =   1  'Checked
@@ -61,6 +61,14 @@ Begin VB.Form frmMain
       Interval        =   50
       Left            =   5280
       Top             =   4080
+   End
+   Begin MSComDlg.CommonDialog DlgOpenObj 
+      Left            =   4560
+      Top             =   4680
+      _Version        =   65536
+      _ExtentX        =   847
+      _ExtentY        =   847
+      _StockProps     =   0
    End
 End
 Attribute VB_Name = "frmMain"
@@ -176,7 +184,14 @@ Private Sub GLStart()
     
     glViewport 0, 0, 320, 240
 
-    GLLoadObj gltree, App.Path & "\treehigh.obj"
+    With dlgopenobj
+        .DialogTitle = "Open Model"
+        .Filter = "Wavefront Object File (.obj)|*.obj"
+        .ShowOpen
+        If 0 = Len(.filename) Then End
+        GLLoadObj gltree, .filename
+    End With
+    
     GLViewObjTree gltree
         
     glEnable GL_NORMALIZE
