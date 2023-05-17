@@ -158,28 +158,36 @@ Private Sub GLStart()
     RetVal = 1
     While 0 <> RetVal
         GLhDC = GetDC(PictureGL.hwnd)
+        frmLog.LogLine "hDC: " & GLhDC
     
         PFormatI = ChoosePixelFormat(GLhDC, PFormat)
-        If 1 <> SetPixelFormat(GLhDC, PFormatI, PFormat) Then
-            MsgBox "Error setting pixel format: " & GetLastError, vbCritical, "OpenGL Error"
+        RetVal = GetLastError
+        If 0 = PFormatI Or 0 <> RetVal Then
+            frmLog.LogLine "Pixel Format: " & PFormatI
+            GLShowSystemError "Error choosing pixel format", RetVal, False
+            End
+        Else
+            frmLog.LogLine "Pixel Format: " & PFormatI
+        End If
+        
+        SetPixelFormat GLhDC, PFormatI, PFormat
+        RetVal = GetLastError
+        If 0 <> RetVal Then
+            GLShowSystemError "Error setting pixel format", RetVal, False
             End
         End If
         
-        frmLog.LogLine "hDC: " & GLhDC
         GLhRC = wglCreateContext(GLhDC)
+        RetVal = GetLastError
         frmLog.LogLine "hRC: " & GLhRC
         If 0 = GLhRC Then
             'Problem setting up hRC, so skip rest of setup and start again.
-            frmLog.LogLine "Error creating hRC: " & GetLastError
+            GLShowSystemError "Error creating hRC", RetVal, True
         Else
             wglMakeCurrent GLhDC, GLhRC
-            'wglMakeCurrent just seems to always return 1 even if it failed?
-            RetVal = GetLastError
-            'If 0 <> RetVal Then
-            '    MsgBox "Error creating context: " & RetVal, vbCritical, "OpenGL Error"
-            '    End
-            'End If
         End If
+        
+        DoEvents
     Wend
     
     glViewport 0, 0, 320, 240

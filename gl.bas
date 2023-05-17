@@ -130,6 +130,16 @@ Public Const GL_NOTEQUAL = &H205
 Public Const GL_GEQUAL = &H206
 Public Const GL_ALWAYS = &H207
 
+Public Const FORMAT_MESSAGE_ALLOCATE_BUFFER = &H100
+Public Const FORMAT_MESSAGE_ARGUMENT_ARRAY = &H2000
+Public Const FORMAT_MESSAGE_FROM_HMODULE = &H800
+Public Const FORMAT_MESSAGE_FROM_STRING = &H400
+Public Const FORMAT_MESSAGE_FROM_SYSTEM = &H1000
+Public Const FORMAT_MESSAGE_MAX_WIDTH_MASK = &HFF
+Public Const FORMAT_MESSAGE_IGNORE_INSERTS = &H200
+
+Public Const LANG_NEUTRAL = &H0
+
 Public Declare Function ChoosePixelFormat Lib "Gdi32" (ByVal hdc As Long, ppfd As PIXELFORMATDESCRIPTOR) As Long
 Public Declare Function SetPixelFormat Lib "Gdi32" (ByVal hdc As Long, ByVal format As Long, ppfd As PIXELFORMATDESCRIPTOR) As Boolean
 Public Declare Function SwapBuffers Lib "Gdi32" (ByVal hdc As Long) As Boolean
@@ -164,7 +174,8 @@ Public Declare Sub glDepthMask Lib "Opengl32" (ByVal tf As Boolean)
 Public Declare Sub glDepthFunc Lib "Opengl32" (ByVal tf As Boolean)
 Public Declare Sub glDepthRange Lib "Opengl32" (ByVal near As Double, ByVal far As Double)
 
-Public Declare Function GetLastError Lib "Kernel32" () As Long
+Public Declare Function GetLastError Lib "kernel32" () As Long
+Declare Function FormatMessageA Lib "kernel32" (ByVal dwFlags As Long, lpSource As Any, ByVal dwMessageId As Long, ByVal dwLanguageId As Long, ByVal lpBuffer As String, ByVal nSize As Long, Arguments As Long) As Long
 
 Public Function GLDirName(ByVal FilePath As String)
     
@@ -183,6 +194,18 @@ Public Function GLDirName(ByVal FilePath As String)
 
 End Function
 
+
+Public Sub GLShowSystemError(ByVal ErrorPrefix As String, ByVal ErrorCode As Long, ByVal Silent As Boolean)
+
+    Dim ErrorBuffer As String * 200
+
+    FormatMessageA FORMAT_MESSAGE_FROM_SYSTEM, ByVal 0&, ErrorCode, LANG_NEUTRAL, ErrorBuffer, 200, ByVal 0&
+    If Silent Then
+        frmLog.LogLine ErrorPrefix & ": " & ErrorBuffer
+    Else
+        MsgBox ErrorPrefix & ": " & ErrorBuffer, vbCritical, "OpenGL Error"
+    End If
+End Sub
 
 Public Function GLLoadMtl(ByRef ObjIn As GLObj, ByVal MtlPath As String) As Boolean
 
