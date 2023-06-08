@@ -118,6 +118,25 @@ Public Const GL_NORMALIZE = &HBA1
 Public Const GL_DEPTH_TEST = &HB71
 Public Const GL_CULL_FACE = &HB44
 
+Public Const GL_LIGHTING_BIT = &H40
+Public Const GL_LIGHTING = &HB50
+Public Const GL_LIGHT_MODEL_LOCAL_VIEWER = &HB51
+Public Const GL_LIGHT_MODEL_AMBIENT = &HB53
+Public Const GL_LIGHT0 = &H4000
+Public Const GL_LIGHT1 = &H4001
+Public Const GL_LIGHT2 = &H4002
+Public Const GL_LIGHT3 = &H4003
+Public Const GL_LIGHT4 = &H4004
+Public Const GL_LIGHT5 = &H4005
+Public Const GL_LIGHT6 = &H4006
+Public Const GL_LIGHT7 = &H4007
+Public Const GL_COLOR_MATERIAL = &HB57
+
+Public Const GL_POSITION = &H1203
+Public Const GL_SPOT_DIRECTION = &H1204
+Public Const GL_SPOT_EXPONENT = &H1205
+Public Const GL_SPOT_CUTOFF = &H1206
+
 Public Const GL_TRUE = 1
 Public Const GL_FALSE = 0
 
@@ -129,6 +148,11 @@ Public Const GL_GREATER = &H204
 Public Const GL_NOTEQUAL = &H205
 Public Const GL_GEQUAL = &H206
 Public Const GL_ALWAYS = &H207
+
+Public Const GL_DEPTH_BUFFER_BIT = &H100
+Public Const GL_ACCUM_BUFFER_BIT = &H200
+Public Const GL_STENCIL_BUFFER_BIT = &H400
+Public Const GL_COLOR_BUFFER_BIT = &H4000
 
 Public Const FORMAT_MESSAGE_ALLOCATE_BUFFER = &H100
 Public Const FORMAT_MESSAGE_ARGUMENT_ARRAY = &H2000
@@ -170,9 +194,11 @@ Public Declare Sub glEnd Lib "Opengl32" ()
 Public Declare Sub glPushMatrix Lib "Opengl32" ()
 Public Declare Sub glPopMatrix Lib "Opengl32" ()
 Public Declare Sub glEnable Lib "Opengl32" (ByVal cap As Long)
+Public Declare Sub glDisable Lib "Opengl32" (ByVal cap As Long)
 Public Declare Sub glDepthMask Lib "Opengl32" (ByVal tf As Boolean)
 Public Declare Sub glDepthFunc Lib "Opengl32" (ByVal tf As Boolean)
 Public Declare Sub glDepthRange Lib "Opengl32" (ByVal near As Double, ByVal far As Double)
+Public Declare Sub glLightfv Lib "Opengl32" (ByVal light As Long, ByVal pname As Long, ByRef fv() As Single)
 
 Public Declare Function GetLastError Lib "kernel32" () As Long
 Declare Function FormatMessageA Lib "kernel32" (ByVal dwFlags As Long, lpSource As Any, ByVal dwMessageId As Long, ByVal dwLanguageId As Long, ByVal lpBuffer As String, ByVal nSize As Long, Arguments As Long) As Long

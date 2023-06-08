@@ -3,18 +3,18 @@ Begin VB.Form frmLog
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Log View"
    ClientHeight    =   2295
-   ClientLeft      =   1755
-   ClientTop       =   8115
+   ClientLeft      =   1665
+   ClientTop       =   8535
    ClientWidth     =   6735
    Height          =   2700
    Icon            =   "log.frx":0000
-   Left            =   1695
+   Left            =   1605
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    ScaleHeight     =   2295
    ScaleWidth      =   6735
-   Top             =   7770
+   Top             =   8190
    Width           =   6855
    Begin VB.CheckBox ChkAutoScroll 
       Caption         =   "&Autoscroll"

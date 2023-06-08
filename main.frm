@@ -2,35 +2,52 @@ VERSION 4.00
 Begin VB.Form frmMain 
    Caption         =   "Demo Form"
    ClientHeight    =   5310
-   ClientLeft      =   1425
-   ClientTop       =   2565
-   ClientWidth     =   5895
+   ClientLeft      =   1755
+   ClientTop       =   2160
+   ClientWidth     =   5790
    Height          =   5715
    Icon            =   "main.frx":0000
-   Left            =   1365
+   Left            =   1695
    LinkTopic       =   "Form1"
    ScaleHeight     =   354
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   393
-   Top             =   2220
-   Width           =   6015
+   ScaleWidth      =   386
+   Top             =   1815
+   Width           =   5910
+   Begin VB.CheckBox ChkLight 
+      Caption         =   "&Lighting"
+      Height          =   375
+      Left            =   2640
+      TabIndex        =   5
+      Top             =   4800
+      Width           =   1455
+   End
+   Begin VB.VScrollBar VScrollY 
+      Height          =   3615
+      Left            =   120
+      Max             =   20
+      Min             =   -20
+      TabIndex        =   4
+      Top             =   360
+      Width           =   255
+   End
    Begin VB.Timer TimerStartup 
       Interval        =   100
       Left            =   5280
       Top             =   4680
    End
    Begin VB.CheckBox ChkRotateY 
-      Caption         =   "Rotate Y"
+      Caption         =   "&Rotate Y"
       Height          =   375
       Left            =   480
       TabIndex        =   3
       Top             =   4800
       Value           =   1  'Checked
-      Width           =   2175
+      Width           =   1215
    End
    Begin VB.VScrollBar VScrollZ 
       Height          =   3615
-      Left            =   5280
+      Left            =   5400
       Max             =   20
       Min             =   -20
       TabIndex        =   2
@@ -38,17 +55,17 @@ Begin VB.Form frmMain
       Value           =   -5
       Width           =   255
    End
-   Begin VB.HScrollBar HScrollY 
+   Begin VB.HScrollBar HScrollYR 
       Height          =   255
-      Left            =   360
+      Left            =   480
       Max             =   360
       TabIndex        =   1
-      Top             =   4200
+      Top             =   4080
       Width           =   4815
    End
    Begin VB.PictureBox PictureGL 
       Height          =   3600
-      Left            =   360
+      Left            =   480
       ScaleHeight     =   236
       ScaleMode       =   3  'Pixel
       ScaleWidth      =   316
@@ -132,7 +149,7 @@ Private Sub GLStart()
     PFormat.nVersion = 1
     PFormat.dwFlags = PFD_DRAW_TO_WINDOW + PFD_SUPPORT_OPENGL + PFD_DOUBLEBUFFER
     PFormat.iPixelType = PFD_TYPE_RGBA
-    PFormat.cColorBits = 24
+    PFormat.cColorBits = 16
     PFormat.cRedBits = 0
     PFormat.cRedShift = 0
     PFormat.cGreenBits = 0
@@ -146,7 +163,7 @@ Private Sub GLStart()
     PFormat.cAccumGreenBits = 0
     PFormat.cAccumBlueBits = 0
     PFormat.cAccumAlphaBits = 0
-    PFormat.cDepthBits = 32
+    PFormat.cDepthBits = 8
     PFormat.cStencilBits = 0
     PFormat.cAuxBuffers = 0
     PFormat.iLayerType = PFD_MAIN_PLANE
@@ -204,11 +221,13 @@ Private Sub GLStart()
         
     glEnable GL_NORMALIZE
     glEnable GL_CULL_FACE
-    'glEnable GL_DEPTH_TEST
     
-    'glDepthMask GL_TRUE
-    'glDepthFunc GL_LESS
-    'glDepthRange 0, 1
+    glEnable GL_LIGHTING
+    
+    glEnable GL_DEPTH_TEST
+    glDepthMask GL_TRUE
+    glDepthFunc GL_LESS
+    glDepthRange 0, 1
     
     'Setup 3D projection.
     glMatrixMode GL_PROJECTION
@@ -236,13 +255,46 @@ End Sub
 
 Private Sub TimerGL_Timer()
 
+    Dim LightPos(4) As Single
+    Dim LightDir(3) As Single
+
     glClearColor 0#, 0#, 0#, 1#
-    glClear 16384
+    glClear GL_COLOR_BUFFER_BIT + GL_DEPTH_BUFFER_BIT
+    
+    If ChkLight.Value Then
+        glEnable GL_LIGHTING
+        If Not frmLights.Visible Then frmLights.Visible = True
+        
+        If 1 = frmLights.chklight0.Value Then
+            glEnable GL_LIGHT0
+            glEnable GL_COLOR_MATERIAL
+            LightPos(0) = frmLights.slider0x.Value
+            frmLights.lbl0px.Caption = Val(LightPos(0))
+            LightPos(1) = frmLights.slider0y.Value
+            frmLights.lbl0py.Caption = Val(LightPos(1))
+            LightPos(2) = frmLights.slider0z.Value
+            frmLights.lbl0pz.Caption = Val(LightPos(2))
+            LightPos(3) = frmLights.slider0w.Value
+            frmLights.lbl0pw.Caption = Val(LightPos(3))
+            glLightfv GL_LIGHT0, GL_POSITION, LightPos
+            
+            'LightDir(0) = frmLights.slider0dx.Value
+            'LightDir(1) = frmLights.slider0dy.Value
+            'LightDir(2) = frmLights.slider0dz.Value
+            'glLightfv GL_LIGHT0, GL_SPOT_DIRECTION, LightDir
+        Else
+            glDisable GL_LIGHT0
+            glDisable GL_COLOR_MATERIAL
+        End If
+    Else
+        glDisable GL_LIGHTING
+        If frmLights.Visible Then frmLights.Visible = False
+    End If
     
     glPushMatrix
-    glTranslatef 0#, 0#, VScrollZ.Value
+    glTranslatef 0#, VScrollY.Value, VScrollZ.Value
     glRotatef RotateX, 1#, 0#, 0#
-    glRotatef HScrollY.Value, 0#, 1#, 0#
+    glRotatef HScrollYR.Value, 0#, 1#, 0#
     
     'GLCube
     GLDrawTree
@@ -254,8 +306,8 @@ Private Sub TimerGL_Timer()
     'frmMain.Caption = "" & (Val(frmMain.Caption) + 1)
     
     If ChkRotateY.Value Then
-        HScrollY.Value = HScrollY.Value + 5
-        If HScrollY.Value >= 355 Then HScrollY.Value = 0
+        HScrollYR.Value = HScrollYR.Value + 5
+        If HScrollYR.Value >= 355 Then HScrollYR.Value = 0
     End If
 End Sub
 
@@ -264,3 +316,4 @@ Private Sub TimerStartup_Timer()
     GLStart
     TimerStartup.Enabled = False
 End Sub
+
